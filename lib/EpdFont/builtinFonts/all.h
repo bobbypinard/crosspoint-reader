@@ -17,6 +17,12 @@
 #include <builtinFonts/notosans_18_bolditalic.h>
 #include <builtinFonts/notosans_18_italic.h>
 #include <builtinFonts/notosans_18_regular.h>
+#include <builtinFonts/rotunda_row_regular.h>
+#include <builtinFonts/rotunda_sm_bold.h>
+#include <builtinFonts/rotunda_sm_regular.h>
+#include <builtinFonts/rotunda_title_regular.h>
+#include <builtinFonts/rotunda_xs_bold.h>
+#include <builtinFonts/rotunda_xs_regular.h>
 #include <builtinFonts/ubuntu_10_bold.h>
 #include <builtinFonts/ubuntu_10_regular.h>
 #include <builtinFonts/ubuntu_12_bold.h>

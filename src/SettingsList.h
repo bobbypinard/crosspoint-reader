@@ -244,11 +244,34 @@ inline SettingInfo buildShortPowerButtonSetting() {
                                   setShortPowerButtonFromDisplayValue, "shortPwrBtn", StrId::STR_CAT_CONTROLS);
 }
 
+// Every theme, indexed by stored value, so persistence keeps any saved value.
 inline std::vector<StrId> homeThemeValues() {
-  static constexpr StrId VALUES[] = {StrId::STR_THEME_CLASSIC, StrId::STR_THEME_LYRA, StrId::STR_THEME_LYRA_EXTENDED,
-                                     StrId::STR_THEME_ROUNDEDRAFF, StrId::STR_THEME_COVER_GRID};
-  const size_t count = UITheme::supportsCoverGrid() ? std::size(VALUES) : std::size(VALUES) - 1;
-  return {VALUES, VALUES + count};
+  return {StrId::STR_THEME_CLASSIC,     StrId::STR_THEME_LYRA,       StrId::STR_THEME_LYRA_EXTENDED,
+          StrId::STR_THEME_ROUNDEDRAFF, StrId::STR_THEME_COVER_GRID, StrId::STR_THEME_ROTUNDA};
+}
+
+// The menu hides Cover Grid on boards without PSRAM; values after it shift down by one.
+inline std::vector<StrId> uiThemeMenuValues() {
+  auto values = homeThemeValues();
+  if (!UITheme::supportsCoverGrid()) values.erase(values.begin() + CrossPointSettings::COVER_GRID);
+  return values;
+}
+
+inline uint8_t uiThemeDisplayValue() {
+  const uint8_t raw = SETTINGS.uiTheme;
+  if (UITheme::supportsCoverGrid()) return raw;
+  if (raw == CrossPointSettings::COVER_GRID) return CrossPointSettings::LYRA;  // what setTheme() falls back to
+  return raw > CrossPointSettings::COVER_GRID ? raw - 1 : raw;
+}
+
+inline void setUiThemeFromDisplayValue(const uint8_t displayValue) {
+  const bool shifted = !UITheme::supportsCoverGrid() && displayValue >= CrossPointSettings::COVER_GRID;
+  SETTINGS.uiTheme = shifted ? displayValue + 1 : displayValue;
+}
+
+inline SettingInfo buildUiThemeSetting() {
+  return SettingInfo::DynamicEnum(StrId::STR_UI_THEME, uiThemeMenuValues(), uiThemeDisplayValue,
+                                  setUiThemeFromDisplayValue, "uiTheme", StrId::STR_CAT_DISPLAY);
 }
 
 // Shared immutable list for persistence and as the base for UI settings.
@@ -275,6 +298,10 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
     if (it != v.end()) {
       *it = buildFontFamilySetting(registry);
     }
+  }
+  {
+    auto it = std::find_if(v.begin(), v.end(), [](const SettingInfo& s) { return s.nameId == StrId::STR_UI_THEME; });
+    if (it != v.end()) *it = buildUiThemeSetting();
   }
   {
     // Unconditional: even with no SD fonts installed the sizes come from the

@@ -855,6 +855,11 @@ bool Epub::generateCoverBmp(bool cropped, bool originalThresholds) const {
   return false;
 }
 
+std::string Epub::getCoverItemHref() const {
+  if (!bookMetadataCache || !bookMetadataCache->isLoaded()) return {};
+  return bookMetadataCache->coreMetadata.coverItemHref;
+}
+
 std::string Epub::getThumbBmpPath() const { return cachePath + "/thumb_[HEIGHT].bmp"; }
 std::string Epub::getThumbBmpPath(int height) const { return cachePath + "/thumb_" + std::to_string(height) + ".bmp"; }
 

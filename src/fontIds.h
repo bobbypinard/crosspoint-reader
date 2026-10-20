@@ -8,6 +8,10 @@
 #define UI_10_FONT_ID (1322569422)
 #define UI_12_FONT_ID (1831230762)
 #define SMALL_FONT_ID (1465627787)
+#define ROTUNDA_XS_FONT_ID (1596469112)
+#define ROTUNDA_SM_FONT_ID (1462080191)
+#define ROTUNDA_ROW_FONT_ID (-227159665)
+#define ROTUNDA_TITLE_FONT_ID (737794560)
 
 // Font ID 0 is reserved as the "not found" sentinel.
 // Guard against any hash accidentally producing 0.
@@ -18,3 +22,7 @@ static_assert(NOTOSANS_18_FONT_ID != 0, "Font ID collision with sentinel");
 static_assert(UI_10_FONT_ID != 0, "Font ID collision with sentinel");
 static_assert(UI_12_FONT_ID != 0, "Font ID collision with sentinel");
 static_assert(SMALL_FONT_ID != 0, "Font ID collision with sentinel");
+static_assert(ROTUNDA_XS_FONT_ID != 0, "Font ID collision with sentinel");
+static_assert(ROTUNDA_SM_FONT_ID != 0, "Font ID collision with sentinel");
+static_assert(ROTUNDA_ROW_FONT_ID != 0, "Font ID collision with sentinel");
+static_assert(ROTUNDA_TITLE_FONT_ID != 0, "Font ID collision with sentinel");

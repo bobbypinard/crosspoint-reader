@@ -28,6 +28,7 @@
 #include "fontIds.h"
 #include "images/Logo120.h"
 #include "images/MoonIcon.h"
+#include "rotunda/RotundaSleep.h"
 
 namespace {
 // Metalio: B/W sleep images use the full 0xF7 waveform instead of HALF (two
@@ -569,6 +570,8 @@ void SleepActivity::onEnter() {
   switch (SETTINGS.sleepScreen) {
     case (CrossPointSettings::SLEEP_SCREEN_MODE::BLANK):
       return renderBlankSleepScreen();
+    case (CrossPointSettings::SLEEP_SCREEN_MODE::ROTUNDA_NOW_PRAYING):
+      return renderRotundaSleepScreen();
     case (CrossPointSettings::SLEEP_SCREEN_MODE::CUSTOM):
       return renderCustomSleepScreen();
     case (CrossPointSettings::SLEEP_SCREEN_MODE::COVER):
@@ -890,6 +893,64 @@ void SleepActivity::renderLastScreenSleepScreen() const {
   } else {
     renderer.displayBuffer(HalDisplay::FAST_REFRESH);
   }
+}
+
+// One grey refresh: the frame and text go down in black and white, then the
+// cover's grey planes are drawn over that preserved base, as the transparent
+// overlay path does, so the text survives the absolute grey pass.
+void SleepActivity::renderRotundaSleepScreen() const {
+  const RotundaSleep::Layout layout = RotundaSleep::drawFrame(renderer);
+  HalFile file;
+  if (layout.coverPath.empty() || !Storage.openFileForRead("SLP", layout.coverPath, file)) {
+    renderer.displayBuffer(kSleepClean);
+    return;
+  }
+  Bitmap bitmap(file);
+  if (bitmap.parseHeaders() != BmpReaderError::Ok) {
+    renderer.displayBuffer(kSleepClean);
+    return;
+  }
+  const Rect& slot = layout.coverSlot;
+  const int x = slot.x + (slot.width - bitmap.getWidth()) / 2;
+  const int y = slot.y + (slot.height - bitmap.getHeight()) / 2;
+  if (!renderer.drawBitmap(bitmap, x, y, slot.width, slot.height) || !bitmap.hasGreyscale()) {
+    renderer.displayBuffer(kSleepClean);
+    return;
+  }
+
+  const bool absolute = renderer.grayscaleCapabilities(sleepGrayscaleMode(renderer)).supported();
+  if (absolute) {
+    cleanBeforeAbsoluteGray(renderer);
+    if (!renderer.displayGrayscaleBase(sleepGrayscaleMode(renderer))) return;
+  } else {
+    renderer.displayGrayscaleBase(HalDisplay::HALF_REFRESH);
+  }
+  bool ready = true;
+  for (const auto plane : {GfxRenderer::GRAYSCALE_LSB, GfxRenderer::GRAYSCALE_MSB}) {
+    if (bitmap.rewindToData() != BmpReaderError::Ok) {
+      ready = false;
+      break;
+    }
+    // Absolute planes keep the base (black text is level 0 in both planes);
+    // overlay planes start empty so only the cover gets grey nudges.
+    if (!absolute) renderer.clearScreen(0x00);
+    renderer.setRenderMode(plane);
+    if (!renderer.drawBitmap(bitmap, x, y, slot.width, slot.height)) {
+      ready = false;
+      break;
+    }
+    if (plane == GfxRenderer::GRAYSCALE_LSB) {
+      renderer.copyGrayscaleLsbBuffers();
+    } else {
+      renderer.copyGrayscaleMsbBuffers();
+    }
+  }
+  if (ready) {
+    renderer.displayGrayBuffer();
+  } else {
+    LOG_ERR("SLP", "Incomplete Now Praying cover; keeping the black-and-white frame");
+  }
+  renderer.setRenderMode(GfxRenderer::BW);
 }
 
 void SleepActivity::renderBlankSleepScreen() const {

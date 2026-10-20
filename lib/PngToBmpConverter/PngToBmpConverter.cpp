@@ -826,7 +826,10 @@ bool PngToBmpConverter::pngFileToBmpStream(HalFile& pngFile, Print& bmpOut, bool
 
 bool PngToBmpConverter::pngFileToBmpStreamWithSize(HalFile& pngFile, Print& bmpOut, int targetMaxWidth,
                                                    int targetMaxHeight) {
-  return pngFileToBmpStreamInternal(pngFile, bmpOut, targetMaxWidth, targetMaxHeight, false);
+  // originalThresholds=true: this path is only used for the Rotunda lock-screen
+  // cover, where the legacy panel tuning's low white cutoff (150 vs. 213) was
+  // erasing the light-grey linework in illustrated covers.
+  return pngFileToBmpStreamInternal(pngFile, bmpOut, targetMaxWidth, targetMaxHeight, false, true, true);
 }
 
 bool PngToBmpConverter::pngFileTo1BitBmpStreamWithSize(HalFile& pngFile, Print& bmpOut, int targetMaxWidth,

@@ -64,6 +64,14 @@ ruby -rdigest -e 'puts [
 ].map{|f| Digest::SHA256.hexdigest(File.read(f)).to_i(16) }.sum % (2 ** 32) - (2 ** 31)'
 ))"
 
+for rot in xs sm row title; do
+  upper=$(echo $rot | tr '[:lower:]' '[:upper:]')
+  files=$(ls ./rotunda_${rot}_*.h | sort | sed 's/.*/"&",/' | tr '\n' ' ')
+  echo "#define ROTUNDA_${upper}_FONT_ID ($(
+  ruby -rdigest -e "puts [ ${files} ].map{|f| Digest::SHA256.hexdigest(File.read(f)).to_i(16) }.sum % (2 ** 32) - (2 ** 31)"
+  ))"
+done
+
 FONT_ID_NAMES=(
   NOTOSANS_12_FONT_ID
   NOTOSANS_14_FONT_ID
@@ -72,6 +80,10 @@ FONT_ID_NAMES=(
   UI_10_FONT_ID
   UI_12_FONT_ID
   SMALL_FONT_ID
+  ROTUNDA_XS_FONT_ID
+  ROTUNDA_SM_FONT_ID
+  ROTUNDA_ROW_FONT_ID
+  ROTUNDA_TITLE_FONT_ID
 )
 
 echo ""

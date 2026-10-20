@@ -27,6 +27,7 @@
 #include "plugins/PluginCatalogActivity.h"
 #include "reader/ReaderActivity.h"
 #include "reader/RemoteTurnGate.h"
+#include "rotunda/RotundaHomeActivity.h"
 #include "settings/OpdsServerListActivity.h"
 #include "settings/SettingsListActivity.h"
 #include "util/BmpViewerActivity.h"
@@ -349,6 +350,24 @@ void ActivityManager::goToFullScreenMessage(std::string message, EpdFontFamily::
 }
 
 void ActivityManager::goHome(HomeMenuItem initialMenuItem, bool cleanInitialRefresh) {
+  if (SETTINGS.uiTheme == CrossPointSettings::ROTUNDA) {
+    // Rotunda Home highlights the row of the screen being left.
+    auto row = RotundaHomeActivity::ROW_TODAY;
+    const std::string& from = currentActivity ? currentActivity->name : std::string();
+    if (from == "RotundaCalendar") row = RotundaHomeActivity::ROW_CALENDAR;
+    if (from == "RotundaLectionary") row = RotundaHomeActivity::ROW_LECTIONARY;
+    if (from == "RotundaLibrary" || initialMenuItem == HomeMenuItem::LIBRARY) row = RotundaHomeActivity::ROW_LIBRARY;
+    if (from == "RotundaClubs") row = RotundaHomeActivity::ROW_CLUBS;
+    if (from == "Settings" || from == "SettingsList" || initialMenuItem == HomeMenuItem::SETTINGS_MENU) {
+      row = RotundaHomeActivity::ROW_SETTINGS;
+    }
+    auto home = makeUniqueNoThrow<RotundaHomeActivity>(renderer, mappedInput, row);
+    if (home) {
+      replaceActivity(std::move(home));
+      return;
+    }
+    LOG_ERR("ACT", "OOM: Rotunda home; using the standard home");
+  }
   if (initialMenuItem == HomeMenuItem::NONE && currentActivity) {
     const auto& activityName = currentActivity->name;
     if (activityName == "FileBrowser") {

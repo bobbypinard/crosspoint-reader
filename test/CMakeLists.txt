@@ -77,6 +77,7 @@ add_subdirectory(http_header)
 add_subdirectory(txt_to_html)
 
 add_subdirectory(absolute_grayscale)
+add_subdirectory(rotunda_office)
 
 add_subdirectory(sd_card_font)
 add_subdirectory(clipping_preview)

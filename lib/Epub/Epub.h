@@ -73,6 +73,8 @@ class Epub {
   const std::string& getAuthor() const;
   const std::string& getLanguage() const;
   std::string getCoverBmpPath(bool cropped = false, bool originalThresholds = false) const;
+  // Cover image href from the loaded metadata cache; empty when unknown.
+  std::string getCoverItemHref() const;
   bool generateCoverBmp(bool cropped = false, bool originalThresholds = false) const;
   std::string getThumbBmpPath() const;
   std::string getThumbBmpPath(int height) const;

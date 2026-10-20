@@ -724,7 +724,10 @@ bool JpegToBmpConverter::jpegFileToBmpStream(HalFile& jpegFile, Print& bmpOut, b
 // Convert with custom target size (for thumbnails, 2-bit)
 bool JpegToBmpConverter::jpegFileToBmpStreamWithSize(HalFile& jpegFile, Print& bmpOut, int targetMaxWidth,
                                                      int targetMaxHeight) {
-  return jpegFileToBmpStreamInternal(jpegFile, bmpOut, targetMaxWidth, targetMaxHeight, false);
+  // originalThresholds=true: this path is only used for the Rotunda lock-screen
+  // cover, where the legacy panel tuning's low white cutoff (150 vs. 213) was
+  // erasing the light-grey linework in illustrated covers.
+  return jpegFileToBmpStreamInternal(jpegFile, bmpOut, targetMaxWidth, targetMaxHeight, false, true, true);
 }
 
 // Convert to 1-bit BMP (black and white only, no grays) for fast home screen rendering

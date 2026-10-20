@@ -55,6 +55,7 @@
 #include "clippings/ClippingsManager.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
+#include "rotunda/RotundaBooks.h"
 #include "util/BookmarkUtil.h"
 #include "util/ButtonNavigator.h"
 #include "util/ScreenshotUtil.h"
@@ -267,6 +268,7 @@ bool EpubReaderActivity::loadBook() {
   });
 
   epub->setupCacheDir();
+  officeHook = OfficeReaderHook::create(*epub);
 
   HalFile f;
   if (Storage.openFileForRead("ERS", epub->getCachePath() + "/progress.bin", f)) {
@@ -291,7 +293,27 @@ bool EpubReaderActivity::loadBook() {
     }
   }
 
-  if (currentSpineIndex == 0) {
+  // Rotunda screens open a book straight at one TOC entry (an office, a psalm).
+  RotundaBooks::OpenRequest openRequest;
+  bool openedAtRequest = false;
+  if (RotundaBooks::takeOpenRequest(bookPath.c_str(), openRequest)) {
+    const int tocTotal = epub->getTocItemsCount();
+    for (int i = 0; i < tocTotal; ++i) {
+      const auto item = epub->getTocItem(i);
+      const bool match = openRequest.title[0] ? RotundaBooks::tocTitleMatches(item.title, openRequest.title)
+                                              : i == openRequest.tocIndex;
+      if (!match || item.spineIndex < 0) continue;
+      currentSpineIndex = item.spineIndex;
+      pendingAnchor = item.anchor;
+      nextPageNumber = 0;
+      cachedVisibleTextOffset.reset();
+      openedAtRequest = true;
+      LOG_DBG("ERS", "Opening at TOC %d (spine %d)", i, currentSpineIndex);
+      break;
+    }
+  }
+
+  if (currentSpineIndex == 0 && !openedAtRequest) {
     int textSpineIndex = epub->getSpineIndexForTextReference();
     if (textSpineIndex != 0) {
       currentSpineIndex = textSpineIndex;
@@ -456,7 +478,7 @@ void EpubReaderActivity::startClipSelection(const int initialX, const int initia
 
   int marginTop, marginRight, marginBottom, marginLeft;
   renderer.getOrientedViewableTRBL(&marginTop, &marginRight, &marginBottom, &marginLeft);
-  marginTop += SETTINGS.screenMargin;
+  marginTop += SETTINGS.screenMargin + officeChromeTop();
   marginLeft += SETTINGS.screenMargin;
 
   std::string chapterTitle;
@@ -545,7 +567,7 @@ void EpubReaderActivity::openFootnoteSelect(const bool reopenMenuOnCancel) {
   int orientedMarginTop, orientedMarginRight, orientedMarginBottom, orientedMarginLeft;
   renderer.getOrientedViewableTRBL(&orientedMarginTop, &orientedMarginRight, &orientedMarginBottom,
                                    &orientedMarginLeft);
-  orientedMarginTop += SETTINGS.screenMargin;
+  orientedMarginTop += SETTINGS.screenMargin + officeChromeTop();
   orientedMarginLeft += SETTINGS.screenMargin;
   auto selector = makeUniqueNoThrow<EpubReaderFootnoteSelectActivity>(renderer, mappedInput, std::move(page),
                                                                       orientedMarginLeft, orientedMarginTop);
@@ -1592,14 +1614,17 @@ void EpubReaderActivity::renderBook() {
   int orientedMarginTop, orientedMarginRight, orientedMarginBottom, orientedMarginLeft;
   renderer.getOrientedViewableTRBL(&orientedMarginTop, &orientedMarginRight, &orientedMarginBottom,
                                    &orientedMarginLeft);
-  orientedMarginTop += SETTINGS.screenMargin;
+  orientedMarginTop += SETTINGS.screenMargin + officeChromeTop();
   orientedMarginLeft += SETTINGS.screenMargin;
   orientedMarginRight += SETTINGS.screenMargin;
 
   const uint8_t statusBarHeight = UITheme::getInstance().getStatusBarHeight();
 
-  if (automaticPageTurnActive &&
-      (statusBarHeight == 0 || statusBarHeight == UITheme::getInstance().getProgressBarHeight())) {
+  if (officeChromeTop() > 0) {
+    // The Rotunda scrubber replaces the status bar.
+    orientedMarginBottom += std::max<int>(SETTINGS.screenMargin, OfficeReaderHook::BOTTOM_INSET);
+  } else if (automaticPageTurnActive &&
+             (statusBarHeight == 0 || statusBarHeight == UITheme::getInstance().getProgressBarHeight())) {
     orientedMarginBottom +=
         std::max(SETTINGS.screenMargin,
                  static_cast<uint8_t>(statusBarHeight + UITheme::getInstance().getMetrics().statusBarVerticalMargin));
@@ -1895,6 +1920,7 @@ void EpubReaderActivity::renderBook() {
       lastSavedPage = section->currentPage;
       lastSavedPageCount = section->estimatedTotalPages();
     }
+    if (officeHook) officeHook->onPageShown(*epub, *section, currentSpineIndex);
   }
 
   showPendingSyncSaveError();
@@ -2368,6 +2394,10 @@ void EpubReaderActivity::drawClippingHighlights(const Page& page, const int font
 }
 
 void EpubReaderActivity::renderStatusBar() const {
+  if (section && officeChromeTop() > 0) {
+    officeHook->drawChrome(renderer, *epub, *section, currentSpineIndex);
+    return;
+  }
   const int currentPage = section ? section->currentPage + 1 : 1;
   const float pageCount = section ? section->estimatedTotalPages() : 1;
   const float sectionChapterProg = (pageCount > 0) ? (static_cast<float>(currentPage) / pageCount) : 0;

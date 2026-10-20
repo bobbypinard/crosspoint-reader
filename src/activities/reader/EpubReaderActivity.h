@@ -19,10 +19,16 @@
 #include "ReaderActivity.h"
 #include "ReaderToolbarUi.h"
 #include "components/OptionPopup.h"
+#include "rotunda/OfficeReaderHook.h"
 
 class EpubReaderActivity final : public ReaderActivity {
   std::shared_ptr<Epub> epub;
   std::unique_ptr<Section> section = nullptr;
+  // Daily Office EPUBs only: kept-office logging and the Rotunda reader chrome.
+  std::unique_ptr<OfficeReaderHook> officeHook;
+  int officeChromeTop() const {
+    return officeHook && OfficeReaderHook::chromeActive(renderer) ? OfficeReaderHook::TOP_INSET : 0;
+  }
   int currentSpineIndex = 0;
   int nextPageNumber = 0;
   std::optional<uint16_t> pendingPageJump;

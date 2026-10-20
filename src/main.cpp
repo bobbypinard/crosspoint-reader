@@ -118,6 +118,18 @@ EpdFont ui12RegularFont(&ubuntu_12_regular);
 EpdFont ui12BoldFont(&ubuntu_12_bold);
 EpdFontFamily ui12FontFamily(&ui12RegularFont, &ui12BoldFont);
 
+// Rotunda theme chrome (Inter, docs/rotunda/DESIGN.md "Type").
+EpdFont rotundaXsRegularFont(&rotunda_xs_regular);
+EpdFont rotundaXsBoldFont(&rotunda_xs_bold);
+EpdFontFamily rotundaXsFontFamily(&rotundaXsRegularFont, &rotundaXsBoldFont);
+EpdFont rotundaSmRegularFont(&rotunda_sm_regular);
+EpdFont rotundaSmBoldFont(&rotunda_sm_bold);
+EpdFontFamily rotundaSmFontFamily(&rotundaSmRegularFont, &rotundaSmBoldFont);
+EpdFont rotundaRowFont(&rotunda_row_regular);
+EpdFontFamily rotundaRowFontFamily(&rotundaRowFont);
+EpdFont rotundaTitleFont(&rotunda_title_regular);
+EpdFontFamily rotundaTitleFontFamily(&rotundaTitleFont);
+
 // Definitions for SilentRestart.h. RTC_NOINIT survives ESP.restart() but not power loss.
 RTC_NOINIT_ATTR uint32_t silentRebootMagic;
 RTC_NOINIT_ATTR uint32_t silentRebootTarget;
@@ -469,6 +481,10 @@ void setupDisplayAndFonts(bool seamless = false) {
   renderer.insertFont(UI_10_FONT_ID, ui10FontFamily);
   renderer.insertFont(UI_12_FONT_ID, ui12FontFamily);
   renderer.insertFont(SMALL_FONT_ID, smallFontFamily);
+  renderer.insertFont(ROTUNDA_XS_FONT_ID, rotundaXsFontFamily);
+  renderer.insertFont(ROTUNDA_SM_FONT_ID, rotundaSmFontFamily);
+  renderer.insertFont(ROTUNDA_ROW_FONT_ID, rotundaRowFontFamily);
+  renderer.insertFont(ROTUNDA_TITLE_FONT_ID, rotundaTitleFontFamily);
 
   // Discover and load SD card fonts
   sdFontSystem.begin(renderer);
